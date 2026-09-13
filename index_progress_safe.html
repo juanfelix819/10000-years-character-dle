@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e13">
+<title>Player from 10,000 Years Guess Character Game</title>
+<style>
+:root{--bg:#0b0e13;--panel:#121722;--panel2:#181e2a;--text:#f5f7fa;--muted:#98a2b3;--line:#2a3342;--green:#16834a;--yellow:#c28b17;--red:#9f2d35;--blue:#4f46e5}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b0e13,#0e1219);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.app{max-width:1100px;margin:auto;padding:18px 12px 34px}.top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:22px;margin:0 0 5px}.sub{color:var(--muted);font-size:12px}
+.controls{display:flex;gap:7px;flex-wrap:wrap}.btn,.select,input{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit}.btn{cursor:pointer}.btn.primary{background:var(--blue);border-color:#635bff}.btn.danger{background:#5b1e25}
+.stats{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.pill{background:var(--panel);border:1px solid var(--line);padding:7px 10px;border-radius:999px;font-size:12px}
+.guessbar{position:sticky;top:0;z-index:5;background:rgba(11,14,19,.94);backdrop-filter:blur(10px);padding:10px 0}.search{position:relative;display:flex;gap:8px}.search input{flex:1;min-width:0}.suggestions{position:absolute;left:0;right:88px;top:48px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}.suggestions div{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}.suggestions div:last-child{border:0}.suggestions div:hover{background:#222a38}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}.legend span{font-size:11px;padding:5px 8px;border-radius:7px;background:var(--panel);border:1px solid var(--line)}
+.gridwrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.grid{min-width:850px}.row{display:grid;grid-template-columns:180px repeat(6,1fr);border-bottom:1px solid var(--line)}.row:last-child{border:0}.cell{min-height:72px;padding:8px;border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px}.cell:last-child{border:0}.head .cell{min-height:48px;background:#0f141c;color:#b8c0cd;font-weight:800}.namecell{justify-content:flex-start;text-align:left;background:#11161f;font-weight:750;font-size:12px}.namecell small{display:block;color:var(--muted);font-weight:400;margin-top:3px}.green{background:rgba(22,131,74,.92)}.yellow{background:rgba(194,139,23,.92)}.red{background:rgba(159,45,53,.88)}.gray{background:rgba(75,85,99,.5)}.mark{display:block;font-size:21px;font-weight:900;margin-top:2px}.val{line-height:1.25;word-break:break-word}
+.hint{margin:12px 0}.hintbox{padding:10px 12px;background:#17132a;border:1px dashed #6556a6;border-radius:10px;color:#ddd6fe;font-size:12px}
+.empty{text-align:center;color:var(--muted);padding:38px 12px}.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modal.show{display:flex}.modalbox{width:min(720px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.modalbox h2{margin:0 0 12px}.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{padding:8px;border-bottom:1px solid var(--line);text-align:left}.note{font-size:11px;color:var(--muted);line-height:1.45}.footer{text-align:center;color:#667085;font-size:10px;margin-top:18px}
+@media(max-width:650px){.app{padding:14px 8px}.row{grid-template-columns:140px repeat(6,100px)}h1{font-size:19px}.search .btn{padding-left:13px;padding-right:13px}.suggestions{right:78px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div><h1>Player from 10,000 Years Guess Character Game</h1><div class="sub">Offline WhatPiece-style character deduction • <b id="count">0</b> characters</div></div>
+    <div class="controls">
+      <select id="difficulty" class="select">
+        <option>Beginner</option><option>Easy</option><option>Medium</option><option>Hard</option><option>Expert</option><option>God Mode</option>
+      </select>
+      <button class="btn" onclick="showStats()">Statistics</button>
+      <button class="btn" onclick="showHistory()">History</button>
+      <button class="btn" onclick="backup()">Backup</button>
+      <button class="btn" onclick="document.getElementById('restore').click()">Restore</button>
+      <input id="restore" type="file" accept=".json" style="display:none" onchange="restore(event)">
+    </div>
+  </div>
+
+  <div class="stats">
+    <span class="pill">Wrong: <b id="wrong">0</b></span>
+    <span class="pill">Guesses: <b id="guesses">0</b></span>
+    <span class="pill">Hints: <b id="hints">0</b></span>
+    <span class="pill">Score: <b id="score">1000</b></span>
+  </div>
+
+  <div class="guessbar">
+    <div class="search">
+      <input id="guess" autocomplete="off" placeholder="Type a character name…">
+      <button class="btn primary" onclick="submitGuess()">Guess</button>
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="green">✓ Exact</span><span class="yellow">~ Partial</span><span class="red">✗ Wrong</span>
+    <span class="gray">? No data</span><span>↑ Later</span><span>↓ Earlier</span>
+  </div>
+
+  <div id="hint" class="hint"></div>
+  <div class="gridwrap"><div id="grid" class="grid"></div></div>
+  <div class="footer">Everything is stored locally on this device. No internet connection is required.</div>
+</div>
+
+<div id="modal" class="modal"><div class="modalbox">
+  <h2 id="modalTitle"></h2><div id="modalBody"></div>
+  <div class="modal-actions"><button class="btn primary" onclick="closeModal()">Close</button></div>
+</div></div>
+
+<script>
+const CHARACTERS = [{"name":"gargas","arc":"ballack vs gargas","arcOrder":0,"location":"10000 hell","affiliation":"grand dukes","status":"deceased","gender":"male","race":"demon","description":"demon archduke"},{"name":"goblin","arc":"ballack vs gargas","arcOrder":0,"location":"","affiliation":"","status":"deceased","gender":"male","race":"demon","description":"demon"},{"name":"ballack","arc":"ballack vs gargas","arcOrder":0,"location":"","affiliation":"demon lord","status":"alive","gender":"male","race":"demon","description":"demon Lord subordinate"},{"name":"oh kang woo","arc":"demon Lord castle","arcOrder":1,"location":"demon Lord castle","affiliation":"demon Lord, world ranker and guardian","status":"alive","gender":"male","race":"human","description":"demon Lord, , world ranker and guardian"},{"name":"lilith","arc":"demon Lord castle","arcOrder":1,"location":"","affiliation":"","status":"alive","gender":"female","race":"demon","description":"demon Lord subordinate"},{"name":"head of vocalor","arc":"demon Lord castle","arcOrder":1,"location":"","affiliation":"grand dukes","status":"deceased","gender":"unknown","race":"demon","description":"demon archduke subordinate"},{"name":"aamon","arc":"demon Lord castle","arcOrder":1,"location":"","affiliation":"unknown","status":"alive","gender":"male","race":"demon","description":"unknown"},{"name":"gaia","arc":"gaia system","arcOrder":2,"location":"gaia system","affiliation":"gaia system","status":"unknown","gender":"female","race":"god","description":"protector"},{"name":"Han seo lah","arc":"kang woo arrival on e rank gate","arcOrder":3,"location":"E rank gate","affiliation":"oh kang woo and guardian","status":"alive","gender":"female","race":"human","description":"player and guardian"},{"name":"sabnocks","arc":"kang woo arrival on e rank gate","arcOrder":3,"location":"","affiliation":"","status":"unknown","gender":"unknown","race":"demon","description":"authorities"},{"name":"vocalor","arc":"kang woo arrival on e rank gate","arcOrder":3,"location":"","affiliation":"","status":"unknown","gender":"unknown","race":"demon","description":"authorities"},{"name":"dantalion","arc":"kang woo arrival on e rank gate","arcOrder":3,"location":"","affiliation":"","status":"unknown","gender":"unknown","race":"demon","description":"authorities"},{"name":"E rank guard","arc":"kang woo arrival on e rank gate","arcOrder":3,"location":"","affiliation":"E rank gate","status":"alive","gender":"male","race":"human","description":"guard"},{"name":"seo lah mom","arc":"seo lah apartment","arcOrder":4,"location":"seo lah apartment","affiliation":"seo lah","status":"alive","gender":"female","race":"human","description":"civilian"},{"name":"kim","arc":"seo lah apartment","arcOrder":4,"location":"","affiliation":"reporter","status":"alive","gender":"unknown","race":"human","description":"reporter"},{"name":"Han tae hyun","arc":"seo lah apartment","arcOrder":4,"location":"","affiliation":"seo lah /andras guild","status":"alive","gender":"male","race":"human","description":"player"},{"name":"grace mcgurbin","arc":"seo lah apartment","arcOrder":4,"location":"","affiliation":"guardians and world ranker","status":"alive","gender":"female","race":"human","description":"guardians and world ranker"},{"name":"orobas","arc":"kang woo vs tae hyun","arcOrder":7,"location":"seo lah apartment","affiliation":"oh kang woo","status":"alive","gender":"male","race":"demon","description":"authorities"},{"name":"baek kang hyun","arc":"player regristration arc","arcOrder":8,"location":"player HQ","affiliation":"hanul guild","status":"alive","gender":"male","race":"human","description":"Korean top ranker"},{"name":"jung hyun joo","arc":"player regristration arc","arcOrder":8,"location":"","affiliation":"sanare guild","status":"alive","gender":"male","race":"human","description":"Korean top ranker"},{"name":"chae min hyeok","arc":"player regristration arc","arcOrder":8,"location":"","affiliation":"onnuri guild","status":"alive","gender":"male","race":"human","description":"Korean top ranker"},{"name":"kim jae hyun","arc":"player regristration arc","arcOrder":8,"location":"","affiliation":"mir guild","status":"alive","gender":"male","race":"human","description":"Korean top ranker"},{"name":"chae yeon ju","arc":"player regristration arc","arcOrder":8,"location":"","affiliation":"red rose guild","status":"alive","gender":"female","race":"human","description":"Korean top ranker"},{"name":"hobgoblin","arc":"E rank gate","arcOrder":9,"location":"E rank gate","affiliation":"none","status":"deceased","gender":"male","race":"monster","description":"E gate monster"},{"name":"kim tae soo","arc":"E rank gate","arcOrder":9,"location":"","affiliation":"oh kang woo","status":"alive","gender":"male","race":"human","description":"kang woo party"},{"name":"andras","arc":"d rank gate","arcOrder":11,"location":"d rank gate","affiliation":"oh kang woo","status":"unknown","gender":"unknown","race":"demon","description":"authorities"},{"name":"lizardmen","arc":"d rank gate","arcOrder":11,"location":"","affiliation":"d rank","status":"deceased","gender":"male","race":"monster","description":"d gate monster"},{"name":"ho jun","arc":"d rank gate","arcOrder":11,"location":"","affiliation":"andras guild","status":"deceased","gender":"male","race":"human","description":"andras guild member"},{"name":"seo tae ho","arc":"d rank gate","arcOrder":11,"location":"","affiliation":"","status":"deceased","gender":"male","race":"human","description":"andras guild member"},{"name":"kang cheol ho","arc":"d rank gate","arcOrder":11,"location":"","affiliation":"","status":"alive","gender":"male","race":"human","description":"andras guild member"},{"name":"andre","arc":"andras guild","arcOrder":12,"location":"andras guild HQ","affiliation":"andras guild","status":"alive","gender":"male","race":"human","description":"andras guild leader"},{"name":"teemo","arc":"pc center clash","arcOrder":14,"location":"pc center","affiliation":"oh kang woo","status":"unknown","gender":"unknown","race":"unknown","description":"game"},{"name":"park hyun woo","arc":"pc center clash","arcOrder":14,"location":"","affiliation":"red rose guild","status":"alive","gender":"male","race":"human","description":"administrator"},{"name":"troll","arc":"mokdong c rank gate","arcOrder":15,"location":"mokdong c rank gate","affiliation":"mokdong c rank gate","status":"deceased","gender":"unknown","race":"monster","description":"c gate monster"},{"name":"hellhound","arc":"b rank gate","arcOrder":17,"location":"b rank gate","affiliation":"10000 hell","status":"deceased","gender":"unknown","race":"demon","description":"b gate monster"},{"name":"moon cheong ho","arc":"red rose guild HQ before the battle between moon cheong ho and kang woo","arcOrder":19,"location":"red rose guild HQ","affiliation":"player","status":"alive","gender":"male","race":"human","description":"ex red roses guild"},{"name":"kim shi hoon","arc":"kang woo party creation first battle debut","arcOrder":22,"location":"incheon d rank gate","affiliation":"oh kang woo","status":"alive","gender":"male","race":"human","description":"kang woo party"},{"name":"cha eun bi","arc":"kang woo party creation first battle debut","arcOrder":22,"location":"","affiliation":"","status":"alive","gender":"female","race":"human","description":"kang woo party"},{"name":"demonic wolf","arc":"kang woo party creation first battle debut","arcOrder":22,"location":"","affiliation":"incheon d rank gate","status":"deceased","gender":"unknown","race":"demon","description":"d gate monster"},{"name":"buer","arc":"traces of demonic cult on Uijeongbu b rank gate","arcOrder":24,"location":"Uijeongbu b rank gate","affiliation":"10000 hell","status":"deceased","gender":"unknown","race":"demon","description":"b gate monster"},{"name":"kang sang soo","arc":"traces of demonic cult on Uijeongbu b rank gate","arcOrder":24,"location":"","affiliation":"mir guild","status":"alive","gender":"male","race":"human","description":"mir guild squad"},{"name":"kim young hun","arc":"traces of demonic cult on Uijeongbu b rank gate","arcOrder":24,"location":"","affiliation":"","status":"alive","gender":"male","race":"human","description":"mir guild vice leader"},{"name":"jeong hyun joo","arc":"back to red rose guild headquarters","arcOrder":25,"location":"red rose guild HQ","affiliation":"sanare guild","status":"alive","gender":"female","race":"human","description":"sanare guild leader"},{"name":"echidna","arc":"summoning echidna","arcOrder":26,"location":"suwon s rank gate","affiliation":"oh kang woo","status":"alive","gender":"female","race":"demon","description":"kang woo summoning"},{"name":"reynold von arnan","arc":"summoning echidna","arcOrder":26,"location":"","affiliation":"arnan empire","status":"deceased","gender":"male","race":"human","description":"prince of arnan Empire and  guardians"},{"name":"hans","arc":"summoning echidna","arcOrder":26,"location":"","affiliation":"arnan empire","status":"alive","gender":"male","race":"human","description":"arnan empire knight"},{"name":"reina","arc":"summoning echidna","arcOrder":26,"location":"","affiliation":"arnan empire","status":"alive","gender":"female","race":"human","description":"arnan empire mage"},{"name":"kargath","arc":"summoning echidna","arcOrder":26,"location":"","affiliation":"echidna","status":"deceased","gender":"unknown","race":"demon","description":"echidna mother"},{"name":"el quero","arc":"echidna player identity creation request","arcOrder":28,"location":"red rose guild HQ","affiliation":"suwon s rank gate","status":"deceased","gender":"unknown","race":"demon","description":"s gate monster"},{"name":"wyvern","arc":"echidna player identity creation request","arcOrder":28,"location":"","affiliation":"","status":"deceased","gender":"unknown","race":"demon","description":"s gate monster"},{"name":"mountain giant","arc":"echidna player identity creation request","arcOrder":28,"location":"","affiliation":"","status":"alive","gender":"unknown","race":"demon","description":"s gate monster"},{"name":"giant ogre","arc":"echidna player identity creation request","arcOrder":28,"location":"","affiliation":"","status":"deceased","gender":"unknown","race":"demon","description":"s gate monster"},{"name":"kang dong hun","arc":"kang woo and echidna debut in s rank gate","arcOrder":29,"location":"hanul cult","affiliation":"hwarang corps","status":"deceased","gender":"male","race":"human","description":"hwarang corps member"},{"name":"Terra","arc":"kang woo and echidna debut in s rank gate","arcOrder":29,"location":"","affiliation":"oh kang woo","status":"unknown","gender":"unknown","race":"demon","description":"authorities"},{"name":"kang dong hoon","arc":"kang woo vs demon cultists","arcOrder":30,"location":"","affiliation":"hwarang corps","status":"deceased","gender":"male","race":"human","description":"hwarang corps member"},{"name":"Chang hyeon jae","arc":"hwarang corps HQ","arcOrder":32,"location":"hwarang corps HQ","affiliation":"hwarang corps","status":"alive","gender":"male","race":"human","description":"hwarang corps leader"},{"name":"troll","arc":"si hun became famous target for demon cults","arcOrder":33,"location":"b rank gate","affiliation":"b rank gate","status":"deceased","gender":"unknown","race":"demon","description":"b rank gate monster"},{"name":"flying dragon","arc":"si hun became famous target for demon cults","arcOrder":33,"location":"","affiliation":"martial artist","status":"unknown","gender":"unknown","race":"unknown","description":"martial artist technique"},{"name":"cheon myeong ho","arc":"si hun became famous target for demon cults","arcOrder":33,"location":"","affiliation":"mir guild","status":"alive","gender":"male","race":"human/demon","description":"kim yong hun bodyguard"},{"name":"Fujimoto ryoma","arc":"back to red rose guild HQ","arcOrder":39,"location":"red rose guild HQ","affiliation":"world ranker","status":"deceased","gender":"male","race":"human","description":"world ranker"},{"name":"kraken","arc":"back to red rose guild HQ","arcOrder":39,"location":"","affiliation":"oh kang woo","status":"unknown","gender":"unknown","race":"demon","description":"equipment passive"},{"name":"Minotaur","arc":"kang woo party b rank gate hunt","arcOrder":42,"location":"b rank gate","affiliation":"b rank gate","status":"deceased","gender":"unknown","race":"monster","description":"b rank gate monster"},{"name":"cloud dragon","arc":"kang woo party b rank gate hunt","arcOrder":42,"location":"","affiliation":"kim si hun","status":"unknown","gender":"unknown","race":"unknown","description":"technique"},{"name":"the shadows","arc":"kang woo and seo lah vs demon cultists","arcOrder":46,"location":"parking lot","affiliation":"hanul demonic cult","status":"deceased","gender":"male","race":"human","description":"demonic cult"},{"name":"yoo tae shik","arc":"oriax summoning","arcOrder":48,"location":"s rank gate","affiliation":"priest","status":"deceased","gender":"male","race":"human","description":"demonic cult"},{"name":"oriax","arc":"preparations of defeating demonic corruption and demon cults","arcOrder":49,"location":"hanul demonic cult","affiliation":"hanul demonic cult","status":"deceased","gender":"unknown","race":"monster","description":"s rank gate monster"},{"name":"fissure fragment","arc":"the corruption of thousands Koreans civillians","arcOrder":54,"location":"isu station","affiliation":"hanul demonic cult","status":"deceased","gender":"unknown","race":"monster","description":"hanul demon cult fissure fragment in isu station"},{"name":"amousias","arc":"kang woo vs kang an","arcOrder":55,"location":"isu station","affiliation":"hanul demonic cult","status":"deceased","gender":"unknown","race":"monster","description":"hanul demonization"},{"name":"chun mu jin/cheon mu jin","arc":"after kang woo vs kang an battle","arcOrder":57,"location":"kang woo house","affiliation":"heavenly gate","status":"alive","gender":"male","race":"human","description":"world ranker"},{"name":"nam goong jin","arc":"kang woo vs heavenly gate guards","arcOrder":59,"location":"heavenly gate","affiliation":"heavenly gate","status":"alive","gender":"male","race":"human","description":"mu gan bodyguards"},{"name":"cheon mu gan","arc":"heavenly gate leader mugan decision","arcOrder":61,"location":"heavenly gate","affiliation":"heavenly gate","status":"alive","gender":"male","race":"human","description":"heavenly gate world ranker"},{"name":"kang seo yeon","arc":"mu gan decision to test kang woo","arcOrder":64,"location":"mu gan car","affiliation":"mu gan","status":"alive","gender":"female","race":"human","description":"mu gan daughter"},{"name":"kurosaki yurie","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"red rose hq and Japan","affiliation":"lilith","status":"alive","gender":"female","race":"human","description":"world ranker"},{"name":"asmodeus","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"demon lord","status":"alive","gender":"unknown","race":"demon","description":"demon archduke"},{"name":"mammon","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"deceased","gender":"male","race":"demon","description":"demon archduke"},{"name":"belphegor","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"alive","gender":"unknown","race":"demon","description":"demon archduke"},{"name":"leviathan","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"alive","gender":"unknown","race":"demon","description":"demon archduke"},{"name":"baal","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"alive","gender":"unknown","race":"demon","description":"demon archduke"},{"name":"lucifer","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"alive","gender":"male","race":"demon","description":"demon archduke"},{"name":"satan","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"","affiliation":"","status":"alive","gender":"male","race":"demon","description":"demon archduke"},{"name":"yamada","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":66,"location":"japan","affiliation":"prime minister","status":"alive","gender":"male","race":"human","description":"prime minister of japan"},{"name":"akiyama Ichiro","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":67,"location":"japan demonic cult","affiliation":"lilith","status":"deceased","gender":"male","race":"human","description":"summoning lilith"},{"name":"ito","arc":"kang woo, chang heon jae, seo lah , fujimoto ryoma and cha yeong ju vs cult members and monsters","arcOrder":67,"location":"japan","affiliation":"Guardian and world ranker","status":"alive","gender":"male","race":"human","description":"world ranker and guardian"},{"name":"susanoo","arc":"fujimoto vs oh kang woo","arcOrder":68,"location":"japan","affiliation":"Ryoma","status":"unknown","gender":"unknown","race":"unknown","description":"Ryoma eye summoning"},{"name":"Alex osburne","arc":"alex arc part 1","arcOrder":71,"location":"Korea","affiliation":"world ranker","status":"deceased","gender":"male","race":"human","description":"world ranker"},{"name":"cheon moo hyeon","arc":"preparations against russian cult","arcOrder":77,"location":"harbin, korea","affiliation":"world ranker","status":"unknown","gender":"male","race":"human","description":"world ranker"},{"name":"lakumba","arc":"russian monsters battle","arcOrder":78,"location":"unknown","affiliation":"monster","status":"deceased","gender":"unknown","race":"monster","description":"Russian arc monster"},{"name":"skarta","arc":"russian monsters battle","arcOrder":78,"location":"unknown","affiliation":"monster","status":"deceased","gender":"unknown","race":"monster","description":"Russian arc monster"},{"name":"valharzak","arc":"valharzak summoning","arcOrder":79,"location":"Russia, Vladivostok","affiliation":"oh kang woo","status":"alive","gender":"male","race":"demon","description":"kang woo summoning"},{"name":"skeleton","arc":"valharzak summoning","arcOrder":79,"location":"Russia, Vladivostok","affiliation":"valharzak","status":"alive","gender":"male","race":"demon","description":"valharzak summoning"},{"name":"death knight","arc":"valharzak summoning","arcOrder":79,"location":"Russia, Vladivostok","affiliation":"valharzak","status":"alive","gender":"male","race":"demon","description":"valharzak summoning"},{"name":"gaia","arc":"kang woo and si hun first time im Guardians hall. si hun love admission on gaia to kang woo","arcOrder":83,"location":"guardian HQ","affiliation":"guardian","status":"alive","gender":"female","race":"god","description":"leader of guardian"},{"name":"flesh golem","arc":"daegu arc","arcOrder":87,"location":"daegu","affiliation":"cultist","status":"deceased","gender":"unknown","race":"demon","description":"park no chan summoning"},{"name":"krishallas","arc":"daegu arc","arcOrder":87,"location":"daegu","affiliation":"cultist","status":"deceased","gender":"unknown","race":"demon","description":"park no chan summoning"},{"name":"park no chan","arc":"daegu arc","arcOrder":87,"location":"daegu","affiliation":"cultist","status":"deceased","gender":"male","race":"human","description":"daegu demonic cultist"},{"name":"Cthulhu","arc":"satan and rift seeds information","arcOrder":89,"location":"daegu","affiliation":"demon","status":"unknown","gender":"unknown","race":"demon","description":"lilith interest"},{"name":"jegal hyun","arc":"effect of rift seed and jegal hyun introduction","arcOrder":90,"location":"guardian HQ","affiliation":"guardian","status":"alive","gender":"male","race":"human","description":"guardians"},{"name":"jegal hyun elders","arc":"jegal hyun vs kang woo disguised as satan","arcOrder":91,"location":"guardian HQ","affiliation":"jegal hyun","status":"alive","gender":"male","race":"human","description":"jegal hyun elders"},{"name":"skeleton dragon","arc":"valharzak complains on kang woo","arcOrder":93,"location":"kang woo apartment","affiliation":"demon","status":"unknown","gender":"unknown","race":"demon","description":"valharzak reminiscing"},{"name":"army of death","arc":"valharzak and echidna vs Reynold","arcOrder":96,"location":"unknown","affiliation":"demon","status":"deceased","gender":"unknown","race":"demon","description":"valharzak summoning"},{"name":"tyrion","arc":"valharzak and echidna vs Reynold","arcOrder":96,"location":"unknown","affiliation":"god","status":"deceased","gender":"male","race":"god","description":"Reynold god"},{"name":"halphas","arc":"halpas, malphas and pheonex","arcOrder":102,"location":"grand canyon","affiliation":"demon","status":"alive","gender":"unknown","race":"demon","description":"lucifer main force"},{"name":"malphas","arc":"halpas, malphas and pheonex","arcOrder":102,"location":"grand canyon","affiliation":"demon","status":"deceased","gender":"unknown","race":"demon","description":"lucifer main force"},{"name":"pheonex","arc":"halpas, malphas and pheonex","arcOrder":102,"location":"grand canyon","affiliation":"demon","status":"deceased","gender":"unknown","race":"demon","description":"lucifer main force"},{"name":"giant pig","arc":"gaia south america cult mission to kang woo","arcOrder":103,"location":"guardian HQ","affiliation":"demon","status":"unknown","gender":"unknown","race":"demon","description":"lucifer force"},{"name":"giant goblin","arc":"si hun endless training in guardian hall out of disgust of  satisfaction of reynold death","arcOrder":104,"location":"guardian HQ","affiliation":"monster","status":"deceased","gender":"unknown","race":"unknown","description":"guardian training facility"},{"name":"giant bear","arc":"si hun endless training in guardian hall out of disgust of  satisfaction of reynold death","arcOrder":104,"location":"guardian HQ","affiliation":"monster","status":"deceased","gender":"unknown","race":"unknown","description":"guardian training facility"},{"name":"giant wolf","arc":"si hun endless training in guardian hall out of disgust of  satisfaction of reynold death","arcOrder":104,"location":"guardian HQ","affiliation":"monster","status":"deceased","gender":"unknown","race":"unknown","description":"guardian training facility"},{"name":"giant goblin","arc":"south America arc","arcOrder":106,"location":"South america","affiliation":"monster","status":"deceased","gender":"unknown","race":"unknown","description":"south America monster"},{"name":"giant lizardmen","arc":"south America arc","arcOrder":106,"location":"South america","affiliation":"monster","status":"deceased","gender":"unknown","race":"unknown","description":"south America monster"},{"name":"jaraxas","arc":"introduction of gucheon hell","arcOrder":110,"location":"gucheon hell","affiliation":"demon","status":"deceased","gender":"unknown","race":"demon","description":"gucheon hell demons"},{"name":"jaraksas","arc":"introduction of gucheon hell","arcOrder":110,"location":"gucheon hell","affiliation":"demon","status":"deceased","gender":"unknown","race":"demon","description":"flame Lord from 8th hell"},{"name":"ito shinji","arc":"kang woo knows lilith in kurosaki yurie body","arcOrder":112,"location":"kang woo apartment and japan","affiliation":"world ranker","status":"alive","gender":"male","race":"human","description":"guardians and player"},{"name":"darkin","arc":"kang woo spying on conversation between demonic cultists and lucifer subordinates, faked himself as satan and defeated lucifer forces","arcOrder":119,"location":"the outskirts of middle east","affiliation":"lucifer","status":"deceased","gender":"unknown","race":"demon","description":"lucifer family members"},{"name":"Julia bilkova","arc":"yulia in tibet cult","arcOrder":124,"location":"Tibet","affiliation":"Russia ambassador and demonic cultist","status":"deceased","gender":"female","race":"human","description":"Russia ambassador and demonic cultist"},{"name":"Emmanuel armand","arc":"world leaders meetinf with kang woo","arcOrder":125,"location":"Washington, America","affiliation":"France ambassador","status":"alive","gender":"male","race":"human","description":"world leaders"},{"name":"Jason hemmet","arc":"preparations for tibet cult eradication","arcOrder":126,"location":"guardian training room","affiliation":"world ranker","status":"alive","gender":"male","race":"human","description":"world ranker"},{"name":"demonic god","arc":"kang woo vs demon god","arcOrder":132,"location":"the door","affiliation":"kang woo","status":"Alive","gender":"male","race":"demon","description":"side effect of opening door"},{"name":"yogg-saron","arc":"si hun before corrupted and  ballack disguised as yogg saron","arcOrder":137,"location":"grand canyon","affiliation":"lilith and ballack","status":"alive","gender":"male","race":"demon","description":"merging of lilith and ballack"},{"name":"kadka","arc":"introduction of mage tower","arcOrder":142,"location":"guardian headquarter","affiliation":"mage tower","status":"alive","gender":"male","race":"human","description":"mage tower mage"},{"name":"kadea","arc":"introduction of mage tower","arcOrder":142,"location":"guardian headquarter","affiliation":"mage tower","status":"alive","gender":"female","race":"human","description":"mage tower mage"},{"name":"lucis","arc":"kang woo plan on lucifer and lucis","arcOrder":146,"location":"kang woo apartment","affiliation":"lucifer","status":"alive","gender":"male","race":"demon","description":"lucifer son"},{"name":"leviathan parent","arc":"kang woo plan on lucifer and lucis","arcOrder":146,"location":"","affiliation":"leviathan","status":"alive","gender":"unknown","race":"demon","description":"Leviathan parent"},{"name":"reiksguard","arc":"lucis vs oh kang woo","arcOrder":147,"location":"the outskirts of middle east","affiliation":"lucis","status":"alive","gender":"male","race":"demon","description":"lucifer bodyguard"},{"name":"rakiskad","arc":"demon cultists and lucis attack on lucifer forces","arcOrder":151,"location":"unknown","affiliation":"lucifer","status":"alive","gender":"male","race":"demon","description":"lucifer subordinate"},{"name":"army of pride","arc":"kang woo forces vs lucifer forces","arcOrder":152,"location":"unknown","affiliation":"lucifer","status":"deceased","gender":"male","race":"demon","description":"lucifer troops"},{"name":"Ludwig","arc":"archangels cooperation with guardians","arcOrder":157,"location":"Hall of guardians","affiliation":"Raphael","status":"alive","gender":"male","race":"angel","description":"Raphael apostle"},{"name":"zeras","arc":"archangels cooperation with guardians","arcOrder":157,"location":"","affiliation":"Raphael","status":"deceased","gender":"male","race":"angel","description":"Raphael apostle"},{"name":"azir","arc":"archangels cooperation with guardians","arcOrder":157,"location":"","affiliation":"Raphael","status":"deceased","gender":"male","race":"angel","description":"Raphael apostle"},{"name":"Raphael","arc":"lilith dungeon","arcOrder":158,"location":"lilith dungeon","affiliation":"Raphael","status":"alive","gender":"male","race":"angel","description":"Raphael apostle's mentor"}];
+const FIELDS=["arc","location","affiliation","status","gender","race"];
+const LABELS={arc:"Arc",location:"Location",affiliation:"Affiliation",status:"Status",gender:"Gender",race:"Race"};
+const STORE="tenk-player-progress";
+const LEGACY_STORES=["tenk-dle-v3","tenk-dle-v4","tenk-dle-v5","tenk-dle-v6"];
+function migrateLegacyProgress(){
+  try{
+    if(localStorage.getItem(STORE)) return;
+    for(const old of LEGACY_STORES){
+      const stateRaw=localStorage.getItem(old), histRaw=localStorage.getItem(old+"_history"), recentRaw=localStorage.getItem(old+"_recent");
+      if(stateRaw||histRaw||recentRaw){
+        if(stateRaw) localStorage.setItem(STORE,stateRaw);
+        if(histRaw) localStorage.setItem(STORE+"_history",histRaw);
+        if(recentRaw) localStorage.setItem(STORE+"_recent",recentRaw);
+        break;
+      }
+    }
+  }catch(e){}
+}
+migrateLegacyProgress();
+let state={target:null,guesses:[],wrong:0,hints:[],usedHintCats:[],score:1000,difficulty:"Beginner",finished:false};
+
+function norm(v){return String(v||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[’‘]/g,"'").replace(/[^a-z0-9\s\/,;|_-]/g,"").replace(/\s+/g," ").trim()}
+function parts(v){return norm(v).split(/[\/,;|]+/).map(x=>x.trim()).filter(Boolean)}
+function setOf(v){return new Set(parts(v))}
+function exact(a,b){return norm(a)!=="" && norm(a)===norm(b)}
+function partial(field,a,b){
+  if(!a||!b)return false;
+  const A=setOf(a),B=setOf(b);
+  if(!A.size||!B.size)return false;
+  if(field==="affiliation"||field==="location"||field==="race") {
+    for(const x of A) for(const y of B) {
+      if(x===y) return true;
+      if(x.length>=4 && y.length>=4 && (x.includes(y)||y.includes(x))) return true;
+    }
+  }
+  if(field==="status"||field==="gender") {
+    return norm(a)===norm(b);
+  }
+  return false;
+}
+function compare(field,g,t){
+  const gv=g[field],tv=t[field];
+  if(!norm(gv)||!norm(tv)) return {kind:"gray",symbol:"?",value:gv||"No data"};
+  if(exact(gv,tv)) return {kind:"green",symbol:"✓",value:gv};
+  if(field==="arc"){
+    const d=(t.arcOrder??-1)-(g.arcOrder??-1);
+    if(d===0) return {kind:"green",symbol:"✓",value:gv};
+    // Yellow means the guessed arc is immediately adjacent to the target arc.
+    if(Math.abs(d)===1) return {kind:"yellow",symbol:d>0?"↑":"↓",value:gv};
+    return {kind:"red",symbol:d>0?"↑":"↓",value:gv};
+  }
+  if(partial(field,gv,tv)) return {kind:"yellow",symbol:"~",value:gv};
+  return {kind:"red",symbol:"✗",value:gv};
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function save(){localStorage.setItem(STORE,JSON.stringify(state))}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORE)||"null");
+    if(s&&s.target&&CHARACTERS.some(c=>c.name===s.target.name)){state=s;state.difficulty=document.getElementById("difficulty").value;return true}
+  }catch(e){}
+  return false
+}
+function recent(){try{return JSON.parse(localStorage.getItem(STORE+"_recent")||"[]")}catch(e){return []}}
+function newRound(){
+  const r=recent(); let pool=CHARACTERS.filter(c=>!r.includes(c.name)); if(!pool.length)pool=CHARACTERS;
+  state={target:pool[Math.floor(Math.random()*pool.length)],guesses:[],wrong:0,hints:[],usedHintCats:[],score:1000,difficulty:document.getElementById("difficulty").value,finished:false};
+  save();render();
+}
+function updateStats(){
+  wrong.textContent=state.wrong;guesses.textContent=state.guesses.length;hints.textContent=state.hints.length;score.textContent=state.score;
+}
+function render(){
+  updateStats();
+  let h='<div class="row head"><div class="cell">Character</div>'+FIELDS.map(f=>'<div class="cell">'+LABELS[f]+'</div>').join("")+'</div>';
+  if(!state.guesses.length)h+='<div class="empty">Make a guess. Every submitted character becomes a comparison row.</div>';
+  state.guesses.forEach((g,i)=>{
+    h+='<div class="row"><div class="cell namecell"><div>'+esc(g.name)+'<small>Guess '+(i+1)+'</small></div></div>';
+    FIELDS.forEach(f=>{const r=compare(f,g,state.target);h+='<div class="cell '+r.kind+'"><div class="val">'+esc(r.value)+'<span class="mark">'+(r.symbol||"")+'</span></div></div>'});
+    h+='</div>';
+  });
+  grid.innerHTML=h;
+  hint.innerHTML=state.hints.length?'<div class="hintbox"><b>Hint:</b> '+esc(state.hints[state.hints.length-1].text)+'</div>':"";
+}
+function findCharacter(q){
+  const n=norm(q);if(!n)return null;
+  return CHARACTERS.find(c=>norm(c.name)===n)||CHARACTERS.find(c=>norm(c.name).includes(n)||n.includes(norm(c.name)));
+}
+function submitGuess(){
+  if(state.finished){alert("Start a new round first.");return}
+  const c=findCharacter(guess.value);
+  if(!c){alert("Select a character from the database.");return}
+  if(state.guesses.some(x=>x.name===c.name)){alert("You already guessed that character.");return}
+  state.guesses.push(c);
+  const win=norm(c.name)===norm(state.target.name);
+  if(win){finish(true);return}
+  state.wrong++;state.score=Math.max(0,state.score-50);
+  if(state.wrong%3===0)unlockHint();
+  guess.value="";suggestions.innerHTML="";save();render();
+}
+function unlockHint(){
+  const a=FIELDS.filter(f=>!state.usedHintCats.includes(f));if(!a.length)return;
+  const f=a[Math.floor(Math.random()*a.length)];state.usedHintCats.push(f);
+  state.hints.push({field:f,text:LABELS[f]+": "+(state.target[f]||"No data")});
+}
+function recordResult(win){
+  const hist=JSON.parse(localStorage.getItem(STORE+"_history")||"[]");
+  hist.unshift({character:state.target.name,difficulty:state.difficulty,win,wrong:state.wrong,guesses:state.guesses.length,hints:state.hints.length,score:state.score,date:new Date().toISOString()});
+  localStorage.setItem(STORE+"_history",JSON.stringify(hist.slice(0,1000)));
+  const r=recent();r.unshift(state.target.name);localStorage.setItem(STORE+"_recent",JSON.stringify(r.slice(0,15)));
+}
+function finish(win){
+  state.finished=true;recordResult(win);save();render();
+  modalTitle.textContent=win?"Correct!":"Round finished";
+  modalBody.innerHTML=win
+    ?'<p>You found <b>'+esc(state.target.name)+'</b>.</p><p>Guesses: '+state.guesses.length+'<br>Wrong guesses: '+state.wrong+'<br>Hints: '+state.hints.length+'<br>Score: '+state.score+'</p>'
+    :'<p>The answer was <b>'+esc(state.target.name)+'</b>.</p>';
+  modalBody.innerHTML+='<div class="modal-actions"><button class="btn primary" onclick="closeModal();newRound()">New Round</button></div>';
+  modal.classList.add("show");
+}
+function closeModal(){modal.classList.remove("show")}
+function showStats(){
+  const hist=JSON.parse(localStorage.getItem(STORE+"_history")||"[]");
+  let h='<table class="table"><tr><th>Difficulty</th><th>Games</th><th>Win rate</th><th>Avg wrong</th><th>Avg hints</th><th>Avg score</th></tr>';
+  ["Beginner","Easy","Medium","Hard","Expert","God Mode"].forEach(d=>{
+    const a=hist.filter(x=>x.difficulty===d),wins=a.filter(x=>x.win).length;
+    const avg=k=>a.length?(a.reduce((s,x)=>s+(Number(x[k])||0),0)/a.length).toFixed(1):"—";
+    h+='<tr><td>'+d+'</td><td>'+a.length+'</td><td>'+(a.length?(wins/a.length*100).toFixed(0)+"%":"—")+'</td><td>'+avg("wrong")+'</td><td>'+avg("hints")+'</td><td>'+avg("score")+'</td></tr>';
+  });
+  h+='</table><p class="note">Statistics are saved locally. They survive closing and reopening this offline file unless browser/site data is cleared.</p><div class="modal-actions"><button class="btn danger" onclick="clearData()">Clear saved history</button></div>';
+  modalTitle.textContent="Statistics";modalBody.innerHTML=h;modal.classList.add("show");
+}
+function showHistory(){
+  const hist=JSON.parse(localStorage.getItem(STORE+"_history")||"[]");
+  if(!hist.length){modalTitle.textContent="History";modalBody.innerHTML='<p class="note">No completed rounds yet.</p>';modal.classList.add("show");return}
+  let h='<table class="table"><tr><th>Date</th><th>Character</th><th>Difficulty</th><th>Result</th><th>Wrong</th><th>Score</th></tr>';
+  hist.slice(0,100).forEach(x=>{h+='<tr><td>'+new Date(x.date).toLocaleDateString()+'</td><td>'+esc(x.character)+'</td><td>'+esc(x.difficulty)+'</td><td>'+(x.win?"✓ Win":"✗ Loss")+'</td><td>'+x.wrong+'</td><td>'+x.score+'</td></tr>'});
+  h+='</table>';modalTitle.textContent="History";modalBody.innerHTML=h;modal.classList.add("show");
+}
+function clearData(){
+  if(confirm("Clear all saved history, statistics and recent-character data?")){
+    localStorage.removeItem(STORE+"_history");localStorage.removeItem(STORE+"_recent");closeModal();
+  }
+}
+function backup(){
+  const payload={version:4,game:STORE,state,history:JSON.parse(localStorage.getItem(STORE+"_history")||"[]"),recent:recent()};
+  const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="10000-years-character-dle-save.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function restore(e){
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=()=>{
+    try{
+      const p=JSON.parse(rd.result);if(!p||!p.history)throw 0;
+      localStorage.setItem(STORE+"_history",JSON.stringify(p.history.slice(0,1000)));
+      localStorage.setItem(STORE+"_recent",JSON.stringify((p.recent||[]).slice(0,15)));
+      if(p.state&&p.state.target&&CHARACTERS.some(c=>c.name===p.state.target.name)){state=p.state;state.difficulty=document.getElementById("difficulty").value;save()}
+      render();alert("Save restored.");
+    }catch(err){alert("That backup file is not valid.")}
+  };rd.readAsText(f);e.target.value="";
+}
+guess.addEventListener("input",()=>{
+  const q=norm(guess.value);suggestions.innerHTML="";if(!q)return;
+  CHARACTERS.filter(c=>norm(c.name).includes(q)).slice(0,10).forEach(c=>{
+    const d=document.createElement("div");d.textContent=c.name;d.onclick=()=>{guess.value=c.name;suggestions.innerHTML=""};suggestions.appendChild(d);
+  });
+});
+guess.addEventListener("keydown",e=>{if(e.key==="Enter")submitGuess()});
+difficulty.addEventListener("change",newRound);
+count.textContent=CHARACTERS.length;
+if(!load())newRound();else render();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
