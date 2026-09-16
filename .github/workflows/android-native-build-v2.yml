@@ -1,4 +1,4 @@
-name: Build Android APK v2 (native SQLite history)
+name: Build Android APK v3 (native SQLite history)
 
 on:
   workflow_dispatch:
@@ -45,6 +45,24 @@ jobs:
       - name: Generate Gradle wrapper
         working-directory: ${{ env.PROJECT_DIR }}
         run: gradle wrapper --gradle-version 8.11 --distribution-type bin
+
+      - name: Align Java and Kotlin JVM targets
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/build.gradle.kts')
+          s = p.read_text()
+          marker = 'android {\n'
+          addition = '''android {\n    compileOptions {\n        sourceCompatibility = JavaVersion.VERSION_17\n        targetCompatibility = JavaVersion.VERSION_17\n    }\n    kotlinOptions {\n        jvmTarget = "17"\n    }\n'''
+          if marker not in s:
+              raise SystemExit('android block not found')
+          s = s.replace(marker, addition, 1)
+          p.write_text(s)
+          print(p.read_text())
+          PY
 
       - name: Build debug APK
         working-directory: ${{ env.PROJECT_DIR }}
