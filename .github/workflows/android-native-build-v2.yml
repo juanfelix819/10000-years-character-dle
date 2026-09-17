@@ -1,4 +1,4 @@
-name: Build Android APK v4 (native SQLite history + custom logo)
+name: Build Android APK v5 (native SQLite history + custom logo)
 
 on:
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: gradle wrapper --gradle-version 8.11 --distribution-type bin
 
-      - name: Align Java and Kotlin JVM targets
+      - name: Align Java and Kotlin JVM targets and set unique package
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
@@ -69,6 +69,10 @@ jobs:
           if marker not in s:
               raise SystemExit('android block not found')
           s = s.replace(marker, addition, 1)
+          s = s.replace('applicationId = "com.example.tenkcharacters"', 'applicationId = "com.playerfrom10000years.native"')
+          s = s.replace('versionCode = 2', 'versionCode = 3')
+          if 'applicationId = "com.playerfrom10000years.native"' not in s:
+              raise SystemExit('unique applicationId was not applied')
           p.write_text(s)
           print(p.read_text())
           PY
