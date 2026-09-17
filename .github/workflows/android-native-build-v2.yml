@@ -1,4 +1,4 @@
-name: Build Android APK v3 (native SQLite history)
+name: Build Android APK v4 (native SQLite history + custom logo)
 
 on:
   workflow_dispatch:
@@ -28,6 +28,15 @@ jobs:
           test -n "$DIR"
           echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
           echo "Project: $DIR"
+
+      - name: Install uploaded Player from 10000 Years logo
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f icon-512.png
+          cp icon-512.png "$PROJECT_DIR/app/src/main/res/drawable/ic_launcher.png"
+          rm -f "$PROJECT_DIR/app/src/main/res/drawable/ic_launcher.xml"
+          echo "Uploaded logo installed as Android launcher icon."
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
