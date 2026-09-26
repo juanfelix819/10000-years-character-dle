@@ -49,7 +49,7 @@ jobs:
           set -euo pipefail
           FILE="app/build.gradle.kts"
           sed -i 's/applicationId[[:space:]]*=[[:space:]]*"[^"]*"/applicationId = "com.playerfrom10000years.native"/' "$FILE"
-          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 3/' "$FILE" || true
+          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 4/' "$FILE" || true
           sed -i 's/jvmTarget[[:space:]]*=[[:space:]]*"[^"]*"/jvmTarget = "17"/g' "$FILE"
           python3 - <<'PY'
           from pathlib import Path
