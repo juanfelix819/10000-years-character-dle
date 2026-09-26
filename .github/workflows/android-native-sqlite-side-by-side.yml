@@ -37,6 +37,36 @@ jobs:
           rm -f "$PROJECT_DIR/app/src/main/res/drawable/ic_launcher.xml"
           echo "Custom launcher icon installed."
 
+      - name: Inject latest Excel master database
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f characters.generated.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, os
+          root = Path(os.environ["PROJECT_DIR"])
+          candidates = list(root.rglob("*.html"))
+          if not candidates:
+              raise SystemExit("No HTML file found in extracted Android project")
+          data = Path("characters.generated.js").read_text(encoding="utf-8").strip()
+          if not data.startswith("const CHARACTERS = "):
+              raise SystemExit("characters.generated.js has unexpected format")
+          changed = []
+          for p in candidates:
+              s = p.read_text(encoding="utf-8")
+              new, n = re.subn(r"const\s+CHARACTERS\s*=\s*\[.*?\];", data, s, count=1, flags=re.S)
+              if n:
+                  p.write_text(new, encoding="utf-8")
+                  changed.append(str(p))
+          if not changed:
+              raise SystemExit("Could not find const CHARACTERS array in Android project")
+          print("Injected master database into:")
+          for p in changed:
+              print(p)
+          print("Character rows:", data.count('"name"'))
+          PY
+
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
@@ -62,7 +92,7 @@ jobs:
           FILE="app/build.gradle.kts"
           test -f "$FILE"
           sed -i 's/applicationId[[:space:]]*=[[:space:]]*"[^"]*"/applicationId = "com.playerfrom10000years.native"/' "$FILE"
-          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 3/' "$FILE" || true
+          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 4/' "$FILE" || true
           python3 - <<'PY'
           from pathlib import Path
           p = Path('app/build.gradle.kts')
