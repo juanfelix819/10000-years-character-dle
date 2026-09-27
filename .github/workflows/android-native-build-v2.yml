@@ -69,9 +69,11 @@ jobs:
           if marker not in s:
               raise SystemExit('android block not found')
           s = s.replace(marker, addition, 1)
-          s = s.replace('applicationId = "com.example.tenkcharacters"', 'applicationId = "com.playerfrom10000years.native"')
-          s = s.replace('versionCode = 2', 'versionCode = 3')
-          if 'applicationId = "com.playerfrom10000years.native"' not in s:
+          s = s.replace('applicationId = "com.example.tenkcharacters"', 'applicationId = "com.playerfrom10000years.updated20260927"')
+          s = s.replace('applicationId = "com.playerfrom10000years.native"', 'applicationId = "com.playerfrom10000years.updated20260927"')
+          s = s.replace('versionCode = 2', 'versionCode = 5')
+          s = s.replace('versionCode = 3', 'versionCode = 5')
+          if 'applicationId = "com.playerfrom10000years.updated20260927"' not in s:
               raise SystemExit('unique applicationId was not applied')
           p.write_text(s)
           print(p.read_text())
@@ -88,13 +90,13 @@ jobs:
           APK="$(find "$PROJECT_DIR/app/build/outputs/apk/debug" -type f -name '*.apk' -print -quit)"
           test -n "$APK"
           mkdir -p /tmp/apk-out
-          cp "$APK" /tmp/apk-out/player-from-10000-years-native-sqlite.apk
-          ls -lh /tmp/apk-out/player-from-10000-years-native-sqlite.apk
+          cp "$APK" /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
+          ls -lh /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: player-from-10000-years-native-sqlite-apk
-          path: /tmp/apk-out/player-from-10000-years-native-sqlite.apk
+          name: player-from-10000-years-native-sqlite-updated-apk
+          path: /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
           if-no-files-found: error
           retention-days: 14
