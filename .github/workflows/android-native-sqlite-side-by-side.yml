@@ -91,8 +91,8 @@ jobs:
           set -euo pipefail
           FILE="app/build.gradle.kts"
           test -f "$FILE"
-          sed -i 's/applicationId[[:space:]]*=[[:space:]]*"[^"]*"/applicationId = "com.playerfrom10000years.native"/' "$FILE"
-          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 4/' "$FILE" || true
+          sed -i 's/applicationId[[:space:]]*=[[:space:]]*"[^"]*"/applicationId = "com.playerfrom10000years.updated20260927"/' "$FILE"
+          sed -i 's/versionCode[[:space:]]*=[[:space:]]*[0-9][0-9]*/versionCode = 5/' "$FILE" || true
           python3 - <<'PY'
           from pathlib import Path
           p = Path('app/build.gradle.kts')
@@ -124,13 +124,13 @@ jobs:
           APK="$(find "$PROJECT_DIR/app/build/outputs/apk/debug" -type f -name '*.apk' -print -quit)"
           test -n "$APK"
           mkdir -p /tmp/apk-out
-          cp "$APK" /tmp/apk-out/player-from-10000-years-native-sqlite-side-by-side.apk
-          ls -lh /tmp/apk-out/player-from-10000-years-native-sqlite-side-by-side.apk
+          cp "$APK" /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
+          ls -lh /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: player-from-10000-years-native-sqlite-side-by-side-apk
-          path: /tmp/apk-out/player-from-10000-years-native-sqlite-side-by-side.apk
+          name: player-from-10000-years-native-sqlite-updated-apk
+          path: /tmp/apk-out/player-from-10000-years-native-sqlite-updated.apk
           if-no-files-found: error
           retention-days: 14
