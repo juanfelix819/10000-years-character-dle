@@ -40,12 +40,12 @@ public class MainActivity extends Activity {
     final String[] modes={"Beginner","Easy","Medium","Hard","Expert","God Mode"};
 
     static class CharacterData {
-        String name,arc,location,affiliation,status,gender,race,description; int arcOrder;
+        String name,arc,location,affiliation,status,gender,race,nationality,power,description; int arcOrder;
         CharacterData(JSONObject o) throws JSONException {
             name=o.optString("name"); arc=o.optString("arc"); arcOrder=o.optInt("arcOrder",-1);
             location=o.optString("location"); affiliation=o.optString("affiliation");
             status=o.optString("status"); gender=o.optString("gender"); race=o.optString("race");
-            description=o.optString("description");
+            nationality=o.optString("nationality"); power=o.optString("power"); description=o.optString("description");
         }
     }
     static class HistoryEntry {
@@ -80,6 +80,7 @@ public class MainActivity extends Activity {
         ArrayAdapter<String> ma=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,modes);
         difficultySpinner.setAdapter(ma); modeRow.addView(difficultySpinner,new LinearLayout.LayoutParams(0,WRAP(),1));
         Button historyBtn=button("History"); modeRow.addView(historyBtn,new LinearLayout.LayoutParams(0,WRAP(),1));
+        Button statsBtn=button("Statistics"); modeRow.addView(statsBtn,new LinearLayout.LayoutParams(0,WRAP(),1));
         Button restoreBtn=button("Restore file"); modeRow.addView(restoreBtn,new LinearLayout.LayoutParams(0,WRAP(),1));
         content.addView(modeRow);
 
@@ -101,6 +102,7 @@ public class MainActivity extends Activity {
         guessInput.setOnEditorActionListener((v,id,e)->{submitGuess();return true;});
         newBtn.setOnClickListener(v->newRound());
         historyBtn.setOnClickListener(v->showHistory());
+        statsBtn.setOnClickListener(v->showStats());
         restoreBtn.setOnClickListener(v->openRestore());
         difficultySpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
             public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){ if(target!=null && !finished){difficulty=modes[pos]; saveNow();} }
@@ -182,7 +184,17 @@ public class MainActivity extends Activity {
         guessesBox.removeAllViews();
         for(int i=0;i<guesses.size();i++){
             CharacterData g=guesses.get(i);
-            TextView card=tv("Guess "+(i+1)+": "+g.name+"\n"+field("Arc",g.arc,arcResult(g))+"\n"+field("Location",g.location,result(g.location,target.location))+"\n"+field("Affiliation",g.affiliation,result(g.affiliation,target.affiliation))+"\n"+field("Status",g.status,result(g.status,target.status))+"\n"+field("Gender",g.gender,result(g.gender,target.gender))+"\n"+field("Race",g.race,result(g.race,target.race)),13,true);
+            StringBuilder b=new StringBuilder();
+            b.append("Guess ").append(i+1).append(": ").append(g.name);
+            b.append("\n").append(field("Arc",g.arc,arcResult(g)));
+            b.append("\n").append(field("Location",g.location,result(g.location,target.location)));
+            b.append("\n").append(field("Nationality",g.nationality,result(g.nationality,target.nationality)));
+            b.append("\n").append(field("Affiliation",g.affiliation,result(g.affiliation,target.affiliation)));
+            b.append("\n").append(field("Status",g.status,result(g.status,target.status)));
+            b.append("\n").append(field("Gender",g.gender,result(g.gender,target.gender)));
+            b.append("\n").append(field("Race",g.race,result(g.race,target.race)));
+            b.append("\n").append(field("Power Type",g.power,result(g.power,target.power)));
+            TextView card=tv(b.toString(),13,true);
             card.setBackgroundColor(Color.rgb(25,29,38)); card.setPadding(12,12,12,12);
             LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,WRAP());p.setMargins(0,5,0,5);guessesBox.addView(card,p);
         }
@@ -199,7 +211,7 @@ public class MainActivity extends Activity {
         JSONArray hs=new JSONArray();for(HistoryEntry h:history)hs.put(h.json());o.put("history",hs);
         JSONArray rs=new JSONArray();for(String r:recent)rs.put(r);o.put("recent",rs);return o;
     }
-    JSONObject characterJson(CharacterData c)throws JSONException{JSONObject o=new JSONObject();o.put("name",c.name);o.put("arc",c.arc);o.put("arcOrder",c.arcOrder);o.put("location",c.location);o.put("affiliation",c.affiliation);o.put("status",c.status);o.put("gender",c.gender);o.put("race",c.race);o.put("description",c.description);return o;}
+    JSONObject characterJson(CharacterData c)throws JSONException{JSONObject o=new JSONObject();o.put("name",c.name);o.put("arc",c.arc);o.put("arcOrder",c.arcOrder);o.put("location",c.location);o.put("affiliation",c.affiliation);o.put("status",c.status);o.put("gender",c.gender);o.put("race",c.race);o.put("nationality",c.nationality);o.put("power",c.power);o.put("description",c.description);return o;}
 
     void loadBundle(JSONObject o)throws JSONException{
         JSONObject st=o.getJSONObject("state");target=new CharacterData(st.getJSONObject("target"));wrong=st.optInt("wrong");hints=st.optInt("hints");score=st.optInt("score",1000);difficulty=st.optString("difficulty","Beginner");finished=st.optBoolean("finished",false);
@@ -250,6 +262,26 @@ public class MainActivity extends Activity {
         try(InputStream in=getContentResolver().openInputStream(d.getData())){
             loadBundle(new JSONObject(new String(readAll(in),StandardCharsets.UTF_8)));render();saveNow();toast("Restored and saved to Download.");
         }catch(Exception e){toast("Restore failed: invalid save file.");}
+    }
+
+    void showStats(){
+        StringBuilder s=new StringBuilder();
+        s.append("Difficulty statistics\\n\\n");
+        for(String mode:modes){
+            int games=0,wins=0,totalWrong=0,totalHints=0,totalScore=0;
+            for(HistoryEntry h:history) if(mode.equals(h.difficulty)){
+                games++; if(h.win)wins++; totalWrong+=h.wrong; totalHints+=h.hints; totalScore+=h.score;
+            }
+            s.append(mode).append(": ").append(games).append(" games");
+            if(games>0){
+                s.append(" • win ").append((wins*100)/games).append("%");
+                s.append(" • avg wrong ").append(String.format(Locale.US,"%.1f",(double)totalWrong/games));
+                s.append(" • avg hints ").append(String.format(Locale.US,"%.1f",(double)totalHints/games));
+                s.append(" • avg score ").append(String.format(Locale.US,"%.1f",(double)totalScore/games));
+            }
+            s.append("\\n");
+        }
+        new android.app.AlertDialog.Builder(this).setTitle("Statistics").setMessage(s.toString()).setPositiveButton("Close",null).show();
     }
 
     void showHistory(){
