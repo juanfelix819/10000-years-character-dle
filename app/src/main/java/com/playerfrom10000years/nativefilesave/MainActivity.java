@@ -182,8 +182,8 @@ public class MainActivity extends Activity {
     }
 
     void unlockHint(){
-        String[] fields={"gender","nationality","race","status","location","affiliation","arc"};
-        String[] labels={"Gender","Nationality","Race","Status","Location","Affiliation","Arc"};
+        String[] fields={"gender","nationality","race","status","location","affiliation","arc","power","description"};
+        String[] labels={"Gender","Nationality","Race","Status","Location","Affiliation","Arc","Power Type","Description"};
         for(int i=0;i<fields.length;i++){
             if(usedHintCats.contains(fields[i])) continue;
             usedHintCats.add(fields[i]);
@@ -224,14 +224,15 @@ public class MainActivity extends Activity {
             CharacterData g=guesses.get(i);
             StringBuilder b=new StringBuilder();
             b.append("Guess ").append(i+1).append(": ").append(g.name);
-            b.append("\n").append(field("Arc",g.arc,arcResult(g)));
-            b.append("\n").append(field("Location",g.location,result(g.location,target.location)));
-            b.append("\n").append(field("Nationality",g.nationality,result(g.nationality,target.nationality)));
-            b.append("\n").append(field("Affiliation",g.affiliation,result(g.affiliation,target.affiliation)));
-            b.append("\n").append(field("Status",g.status,result(g.status,target.status)));
             b.append("\n").append(field("Gender",g.gender,result(g.gender,target.gender)));
+            b.append("\n").append(field("Nationality",g.nationality,result(g.nationality,target.nationality)));
             b.append("\n").append(field("Race",g.race,result(g.race,target.race)));
+            b.append("\n").append(field("Status",g.status,result(g.status,target.status)));
+            b.append("\n").append(field("Location",g.location,result(g.location,target.location)));
+            b.append("\n").append(field("Affiliation",g.affiliation,result(g.affiliation,target.affiliation)));
+            b.append("\n").append(field("Arc",g.arc,arcResult(g)));
             b.append("\n").append(field("Power Type",g.power,result(g.power,target.power)));
+            b.append("\n").append(field("Description",g.description,result(g.description,target.description)));
             TextView card=tv(b.toString(),13,true);
             card.setBackgroundColor(Color.rgb(25,29,38)); card.setPadding(12,12,12,12);
             LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,WRAP());p.setMargins(0,5,0,5);guessesBox.addView(card,p);
