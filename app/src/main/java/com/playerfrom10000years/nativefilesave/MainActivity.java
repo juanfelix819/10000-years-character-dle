@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
     static final int MAX_TRIES = 5;
     final ArrayList<CharacterData> characters = new ArrayList<>();
     final ArrayList<HistoryEntry> history = new ArrayList<>();
+    final ArrayList<String> arcCatalog = new ArrayList<>();
     final HashSet<String> recent = new HashSet<>();
     CharacterData target;
     final ArrayList<CharacterData> guesses = new ArrayList<>();
@@ -121,11 +122,19 @@ public class MainActivity extends Activity {
     TextView stat(String s){TextView t=tv(s,11,false);t.setGravity(Gravity.CENTER);return t;}
 
     void loadCharacters(){
+        loadArcCatalog();
         try(InputStream in=getAssets().open("characters.json")){
             String s=new String(readAll(in),StandardCharsets.UTF_8); JSONArray a=new JSONArray(s);
             for(int i=0;i<a.length();i++) characters.add(new CharacterData(a.getJSONObject(i)));
-            status.setText("Database loaded: "+characters.size()+" characters");
+            status.setText("Database loaded: "+characters.size()+" characters • arc catalog through "+(arcCatalog.isEmpty()?"159":arcCatalog.get(arcCatalog.size()-1)));
         }catch(Exception e){status.setText("Database error: "+e.getMessage());}
+    }
+    void loadArcCatalog(){
+        try(InputStream in=getAssets().open("arcs.json")){
+            String s=new String(readAll(in),StandardCharsets.UTF_8); JSONArray a=new JSONArray(s);
+            arcCatalog.clear();
+            for(int i=0;i<a.length();i++) arcCatalog.add(a.getJSONObject(i).optString("name"));
+        }catch(Exception ignored){}
     }
     byte[] readAll(InputStream in)throws IOException{ByteArrayOutputStream o=new ByteArrayOutputStream();byte[] b=new byte[8192];int n;while((n=in.read(b))>0)o.write(b,0,n);return o.toByteArray();}
     ArrayList<String> getNames(){ArrayList<String> n=new ArrayList<>();for(CharacterData c:characters)n.add(c.name);return n;}
