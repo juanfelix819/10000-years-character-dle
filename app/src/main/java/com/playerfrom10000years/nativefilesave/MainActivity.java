@@ -29,12 +29,14 @@ public class MainActivity extends Activity {
     CharacterData target;
     final ArrayList<CharacterData> guesses = new ArrayList<>();
     int wrong=0, hints=0, score=1000;
+    String lastHint="";
+    final HashSet<String> usedHintCats = new HashSet<>();
     String difficulty="Beginner";
     boolean finished=false;
 
     LinearLayout root, guessesBox;
     AutoCompleteTextView guessInput;
-    TextView status, wrongTv, triesTv, hintTv, scoreTv, targetTv;
+    TextView status, wrongTv, triesTv, hintTv, scoreTv, targetTv, clueTv;
     Spinner difficultySpinner;
     ArrayAdapter<String> nameAdapter;
     final String[] modes={"Beginner","Easy","Medium","Hard","Expert","God Mode"};
@@ -88,6 +90,8 @@ public class MainActivity extends Activity {
         wrongTv=stat("Wrong: 0"); triesTv=stat("Tries: 0/5"); hintTv=stat("Hints: 0"); scoreTv=stat("Score: 1000");
         stats.addView(wrongTv,new LinearLayout.LayoutParams(0,WRAP(),1)); stats.addView(triesTv,new LinearLayout.LayoutParams(0,WRAP(),1));
         stats.addView(hintTv,new LinearLayout.LayoutParams(0,WRAP(),1)); stats.addView(scoreTv,new LinearLayout.LayoutParams(0,WRAP(),1)); content.addView(stats);
+
+        clueTv=tv("Every 3 wrong guesses reveals a clue.",12,false); clueTv.setTextColor(Color.rgb(221,214,254)); content.addView(clueTv);
 
         guessInput=new AutoCompleteTextView(this); guessInput.setHint("Type a character name…"); guessInput.setSingleLine(true);
         content.addView(guessInput,new LinearLayout.LayoutParams(-1,WRAP()));
@@ -147,7 +151,7 @@ public class MainActivity extends Activity {
         ArrayList<CharacterData> pool=new ArrayList<>();
         for(CharacterData c:characters)if(!recent.contains(c.name))pool.add(c);
         if(pool.isEmpty())pool.addAll(characters);
-        target=pool.get(new Random().nextInt(pool.size())); guesses.clear(); wrong=0; hints=0; score=1000; finished=false;
+        target=pool.get(new Random().nextInt(pool.size())); guesses.clear(); wrong=0; hints=0; score=1000; finished=false; lastHint=""; usedHintCats.clear();
         difficulty=(String)difficultySpinner.getSelectedItem(); targetTv.setText("");
         guessInput.setText(""); render(); saveNow();
     }
@@ -163,9 +167,33 @@ public class MainActivity extends Activity {
         if(win){finish(true);return;}
         wrong++;score=Math.max(0,score-50);
         if(wrong>=MAX_TRIES){finish(false);return;}
-        if(wrong%3==0)hints++;
+        if(wrong%3==0)unlockHint();
         guessInput.setText(""); guessInput.dismissDropDown();
         render(); saveNow(); // physical file is updated after every guess too
+    }
+
+    void unlockHint(){
+        String[] fields={"arc","location","nationality","affiliation","status","gender","race","power"};
+        String[] labels={"Arc","Location","Nationality","Affiliation","Status","Gender","Race","Power Type"};
+        for(int i=0;i<fields.length;i++){
+            if(usedHintCats.contains(fields[i])) continue;
+            usedHintCats.add(fields[i]);
+            String value="";
+            switch(fields[i]){
+                case "arc": value=target.arc; break;
+                case "location": value=target.location; break;
+                case "nationality": value=target.nationality; break;
+                case "affiliation": value=target.affiliation; break;
+                case "status": value=target.status; break;
+                case "gender": value=target.gender; break;
+                case "race": value=target.race; break;
+                case "power": value=target.power; break;
+            }
+            if(value==null||value.isEmpty()) value="No data";
+            lastHint=labels[i]+": "+value;
+            hints++;
+            return;
+        }
     }
 
     void finish(boolean win){
@@ -181,6 +209,7 @@ public class MainActivity extends Activity {
     void render(){
         wrongTv.setText("Wrong: "+wrong);triesTv.setText("Tries: "+guesses.size()+"/"+MAX_TRIES);
         hintTv.setText("Hints: "+hints);scoreTv.setText("Score: "+score);
+        clueTv.setText(lastHint.isEmpty()?"Every 3 wrong guesses reveals a clue.":"Clue: "+lastHint);
         guessesBox.removeAllViews();
         for(int i=0;i<guesses.size();i++){
             CharacterData g=guesses.get(i);
@@ -206,7 +235,7 @@ public class MainActivity extends Activity {
 
     JSONObject bundle()throws JSONException{
         JSONObject o=new JSONObject();o.put("version",1);o.put("game","tenk-native-file-save");o.put("savedAt",System.currentTimeMillis());
-        JSONObject st=new JSONObject();st.put("target",characterJson(target));st.put("wrong",wrong);st.put("hints",hints);st.put("score",score);st.put("difficulty",difficulty);st.put("finished",finished);
+        JSONObject st=new JSONObject();st.put("target",characterJson(target));st.put("wrong",wrong);st.put("hints",hints);st.put("score",score);st.put("lastHint",lastHint);st.put("difficulty",difficulty);st.put("finished",finished);
         JSONArray gs=new JSONArray();for(CharacterData c:guesses)gs.put(characterJson(c));st.put("guesses",gs);o.put("state",st);
         JSONArray hs=new JSONArray();for(HistoryEntry h:history)hs.put(h.json());o.put("history",hs);
         JSONArray rs=new JSONArray();for(String r:recent)rs.put(r);o.put("recent",rs);return o;
@@ -214,7 +243,7 @@ public class MainActivity extends Activity {
     JSONObject characterJson(CharacterData c)throws JSONException{JSONObject o=new JSONObject();o.put("name",c.name);o.put("arc",c.arc);o.put("arcOrder",c.arcOrder);o.put("location",c.location);o.put("affiliation",c.affiliation);o.put("status",c.status);o.put("gender",c.gender);o.put("race",c.race);o.put("nationality",c.nationality);o.put("power",c.power);o.put("description",c.description);return o;}
 
     void loadBundle(JSONObject o)throws JSONException{
-        JSONObject st=o.getJSONObject("state");target=new CharacterData(st.getJSONObject("target"));wrong=st.optInt("wrong");hints=st.optInt("hints");score=st.optInt("score",1000);difficulty=st.optString("difficulty","Beginner");finished=st.optBoolean("finished",false);
+        JSONObject st=o.getJSONObject("state");target=new CharacterData(st.getJSONObject("target"));wrong=st.optInt("wrong");hints=st.optInt("hints");score=st.optInt("score",1000);lastHint=st.optString("lastHint","");difficulty=st.optString("difficulty","Beginner");finished=st.optBoolean("finished",false);
         guesses.clear();JSONArray gs=st.optJSONArray("guesses");if(gs!=null)for(int i=0;i<gs.length();i++)guesses.add(new CharacterData(gs.getJSONObject(i)));
         history.clear();JSONArray hs=o.optJSONArray("history");if(hs!=null)for(int i=0;i<hs.length();i++){JSONObject x=hs.getJSONObject(i);HistoryEntry h=new HistoryEntry();h.character=x.optString("character");h.difficulty=x.optString("difficulty","Beginner");h.win=x.optBoolean("win");h.wrong=x.optInt("wrong");h.guesses=x.optInt("guesses");h.hints=x.optInt("hints");h.score=x.optInt("score");h.date=x.optString("date");history.add(h);}
         recent.clear();JSONArray rs=o.optJSONArray("recent");if(rs!=null)for(int i=0;i<rs.length();i++)recent.add(rs.optString(i));
@@ -266,7 +295,7 @@ public class MainActivity extends Activity {
 
     void showStats(){
         StringBuilder s=new StringBuilder();
-        s.append("Difficulty statistics\\n\\n");
+        s.append("Difficulty statistics\n\n");
         for(String mode:modes){
             int games=0,wins=0,totalWrong=0,totalHints=0,totalScore=0;
             for(HistoryEntry h:history) if(mode.equals(h.difficulty)){
@@ -279,7 +308,7 @@ public class MainActivity extends Activity {
                 s.append(" • avg hints ").append(String.format(Locale.US,"%.1f",(double)totalHints/games));
                 s.append(" • avg score ").append(String.format(Locale.US,"%.1f",(double)totalScore/games));
             }
-            s.append("\\n");
+            s.append("\n");
         }
         new android.app.AlertDialog.Builder(this).setTitle("Statistics").setMessage(s.toString()).setPositiveButton("Close",null).show();
     }
