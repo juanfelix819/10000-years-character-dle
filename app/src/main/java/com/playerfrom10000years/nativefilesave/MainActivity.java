@@ -182,8 +182,8 @@ public class MainActivity extends Activity {
     }
 
     void unlockHint(){
-        String[] fields={"arc","location","nationality","affiliation","status","gender","race","power"};
-        String[] labels={"Arc","Location","Nationality","Affiliation","Status","Gender","Race","Power Type"};
+        String[] fields={"gender","nationality","race","status","location","affiliation","arc"};
+        String[] labels={"Gender","Nationality","Race","Status","Location","Affiliation","Arc"};
         for(int i=0;i<fields.length;i++){
             if(usedHintCats.contains(fields[i])) continue;
             usedHintCats.add(fields[i]);
